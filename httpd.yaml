@@ -1,0 +1,41 @@
+---
+ - name: Configuring Apache server 
+   hosts: all
+   become: yes
+   tasks:
+    - name: Install Apache Server
+      yum:
+       name: httpd
+       state: present
+    - name: Start Apache Server
+      service:
+       name: httpd
+       state: started
+       enabled: yes
+    - name: Adding config file
+      template:
+       src: webserver.j2
+       dest: /etc/httpd/conf.d/new_conf.conf
+      notify: server restart
+    - name: Copy index.html file on server
+      template:
+        src: index.j2
+        dest: /var/www/html/index.html
+    
+    - name: Adding firewall rules
+      firewalld:
+       port: 8080/tcp
+       zone: public
+       state: enabled
+       permanent: yes
+       immediate: yes
+    - name: reload firewall
+      systemd:
+       name: firewalld
+       state: reloaded
+   handlers: 
+    - name: server restart
+      service:
+       name: httpd
+       state: restarted
+...
